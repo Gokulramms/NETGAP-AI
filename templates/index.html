@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>🧠 NetGap Personality Test</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --glass-bg: rgba(255,255,255,0.08);
+      --accent: #ffd369;
+    }
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #0b2545 100%);
+      color: #e6eef8;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .glass {
+      background: var(--glass-bg);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px) saturate(120%);
+    }
+    .option-btn {
+      transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .option-btn:hover {
+      transform: scale(1.08);
+      background: rgba(255,210,105,0.15);
+    }
+    .option-btn.selected {
+      background: var(--accent);
+      color: #000;
+      font-weight: 600;
+      transform: scale(1.12);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+    }
+    .fade-enter {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .fade-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+      transition: all .4s ease;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="w-full py-8">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="glass rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">🧠 NetGap Personality Test</h1>
+          <p class="mt-1 text-gray-400">Answer honestly — 22 questions. One at a time for focus.</p>
+        </div>
+        <div class="text-right text-sm text-gray-400">Powered by NetGap</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Progress -->
+  <div class="max-w-5xl mx-auto px-6 mt-4">
+    <div class="bg-white/10 rounded-full h-3 overflow-hidden">
+      <div id="progressBar" class="h-3 bg-yellow-300 w-0 transition-all duration-500"></div>
+    </div>
+    <div class="flex justify-between mt-2 text-sm text-gray-400">
+      <div id="progressText">Question 1 / 22</div>
+      <div id="progressPct">0%</div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <main class="flex-1 max-w-5xl mx-auto px-6 py-8">
+    <div id="wizard" class="glass rounded-3xl p-8 shadow-2xl">
+      <div id="cardsContainer" class="space-y-6">
+        
+        <!-- Example Q1-Q20 scale questions -->
+        {% for category, qs in core.items() %}
+          {% for q in qs %}
+          <section class="question-card hidden glass p-6 rounded-2xl" data-type="scale" data-category="{{ category }}">
+            <h2 class="text-xl md:text-2xl font-semibold mb-6">{{ q }}</h2>
+            <div class="grid grid-cols-5 gap-3">
+              <button class="option-btn glass p-4 rounded-xl text-center" data-value="1">😡<br><span class="text-xs">Strongly Disagree</span></button>
+              <button class="option-btn glass p-4 rounded-xl text-center" data-value="2">😕<br><span class="text-xs">Disagree</span></button>
+              <button class="option-btn glass p-4 rounded-xl text-center" data-value="3">😐<br><span class="text-xs">Neutral</span></button>
+              <button class="option-btn glass p-4 rounded-xl text-center" data-value="4">🙂<br><span class="text-xs">Agree</span></button>
+              <button class="option-btn glass p-4 rounded-xl text-center" data-value="5">🤩<br><span class="text-xs">Strongly Agree</span></button>
+            </div>
+          </section>
+          {% endfor %}
+        {% endfor %}
+
+        <!-- Q21 -->
+        <section class="question-card hidden glass p-6 rounded-2xl" data-type="text" data-category="Situational" data-pos="Q21">
+          <h2 class="text-xl font-semibold mb-4">{{ situational["Q21"] }}</h2>
+          <textarea data-situational="Q21" class="mt-4 w-full p-4 rounded-xl bg-white/10 text-white" rows="6" placeholder="Write your answer here..."></textarea>
+          <div class="mt-4 text-right">
+            <button id="nextQ21" class="px-5 py-2 bg-yellow-300 text-black rounded-lg shadow hover:bg-yellow-400">Next ➡️</button>
+          </div>
+        </section>
+
+        <!-- Q22 -->
+        <section class="question-card hidden glass p-6 rounded-2xl" data-type="text" data-category="Situational" data-pos="Q22">
+          <h2 class="text-xl font-semibold mb-4">{{ situational["Q22"] }}</h2>
+          <textarea data-situational="Q22" class="mt-4 w-full p-4 rounded-xl bg-white/10 text-white" rows="6" placeholder="Write your answer here..."></textarea>
+          <div class="mt-4 text-right">
+            <button id="submitBtn" class="px-5 py-2 bg-green-400 text-black rounded-lg shadow hover:bg-green-500">Submit ✅</button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Results Modal -->
+  <div id="resultModal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+    <div class="glass rounded-2xl p-8 w-full max-w-2xl text-center relative">
+      <h3 class="text-3xl font-bold text-yellow-300 mb-3">🔍 Your Results</h3>
+      <div id="resultCategory" class="text-xl font-semibold mb-4">Category: —</div>
+      <div id="resultScores" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6"></div>
+      <button id="closeModal" class="px-5 py-2 bg-yellow-300 text-black rounded-lg shadow hover:bg-yellow-400">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const cards = Array.from(document.querySelectorAll('.question-card'));
+    const totalQuestions = cards.length;
+    let idx = 0;
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressPct = document.getElementById('progressPct');
+
+    function showCard(i) {
+      cards.forEach((c, ci) => c.classList.toggle('hidden', ci !== i));
+      progressText.textContent = `Question ${i+1} / ${totalQuestions}`;
+      const pct = Math.round(((i+1)/totalQuestions)*100);
+      progressPct.textContent = pct+"%";
+      progressBar.style.width = pct+"%";
+    }
+
+    function collectAnswers() {
+      const core = {};
+      cards.filter(c=>c.dataset.type==="scale").forEach(c=>{
+        const selected = c.querySelector('.option-btn.selected');
+        if (selected) {
+          const cat = c.dataset.category;
+          if (!core[cat]) core[cat] = [];
+          core[cat].push(selected.dataset.value);
+        }
+      });
+      const situational = [];
+      const q21 = document.querySelector('[data-situational="Q21"]');
+      const q22 = document.querySelector('[data-situational="Q22"]');
+      if(q21) situational.push(q21.value.trim());
+      if(q22) situational.push(q22.value.trim());
+      return { core, situational };
+    }
+
+    // Auto move for Q1–Q20
+    document.querySelectorAll('.option-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const card = btn.closest('.question-card');
+        card.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        setTimeout(()=>{
+          if (idx < totalQuestions-1) {
+            idx++;
+            showCard(idx);
+          }
+        }, 400);
+      });
+    });
+
+    // Q21 Next
+    document.getElementById('nextQ21').addEventListener('click', ()=>{
+      if (idx < totalQuestions-1) {
+        idx++;
+        showCard(idx);
+      }
+    });
+
+    // Final submit
+    document.getElementById('submitBtn').addEventListener('click', submitAnswers);
+
+    async function submitAnswers() {
+      const payload = collectAnswers();
+      try {
+        const res = await fetch('/submit', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        document.getElementById('resultCategory').textContent = `Category: ${data.category}`;
+        const container = document.getElementById('resultScores');
+        container.innerHTML="";
+        for (const [k,v] of Object.entries(data.scores)) {
+          const el = document.createElement('div');
+          el.className="glass p-3 rounded-lg text-sm font-semibold";
+          el.innerHTML = `<div class="text-xs text-gray-400">${k}</div><div class="mt-1">${v}</div>`;
+          container.appendChild(el);
+        }
+        document.getElementById('resultModal').classList.remove('hidden');
+      } catch(err) {
+        alert("Submit failed");
+      }
+    }
+
+    document.getElementById('closeModal').addEventListener('click', ()=>location.reload());
+
+    // Start
+    showCard(0);
+  </script>
+</body>
+</html>
